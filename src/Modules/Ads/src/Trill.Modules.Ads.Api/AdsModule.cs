@@ -26,7 +26,8 @@ namespace Trill.Modules.Ads.Api
         public void ConfigureMiddleware(IApplicationBuilder app)
         {
             app.UseContracts()
-                .RegisterPath<ChargeFunds, ChargeFunds.Response>("users-module/charge-funds");
+                .RegisterPath<ChargeFunds, ChargeFunds.Response>("users-module/charge-funds")
+                .RegisterPath<SendStory, SendStory.Response>("stories-module/send-story");
         }
 
         public void ConfigureEndpoints(IEndpointRouteBuilder endpoints)

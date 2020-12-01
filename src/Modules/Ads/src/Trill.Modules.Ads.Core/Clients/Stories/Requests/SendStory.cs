@@ -33,6 +33,15 @@ namespace Trill.Modules.Ads.Core.Clients.Stories.Requests
             Highlighted = highlighted;
         }
         
+        private class Contract : Contract<SendStory>
+        {
+            public Contract()
+            {
+                RequireAll();
+            }
+        }
+
+        [Message("stories")]
         internal class Response
         {
             public long StoryId { get; }
@@ -40,6 +49,14 @@ namespace Trill.Modules.Ads.Core.Clients.Stories.Requests
             public Response(long storyId)
             {
                 StoryId = storyId;
+            }
+
+            private class Contract : Contract<Response>
+            {
+                public Contract()
+                {
+                    RequireAll();
+                }
             }
         }
     }
