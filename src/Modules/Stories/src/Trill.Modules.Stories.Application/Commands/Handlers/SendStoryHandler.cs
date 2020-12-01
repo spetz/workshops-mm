@@ -1,4 +1,6 @@
 using System.Threading.Tasks;
+using Trill.Modules.Stories.Application.Clients.Users;
+using Trill.Modules.Stories.Application.Exceptions;
 using Trill.Modules.Stories.Application.Services;
 using Trill.Modules.Stories.Core.Entities;
 using Trill.Modules.Stories.Core.Policies;
@@ -17,21 +19,34 @@ namespace Trill.Modules.Stories.Application.Commands.Handlers
         private readonly IDateTimeProvider _dateTimeProvider;
         private readonly IIdGenerator _idGenerator;
         private readonly IStoryRequestStorage _storyRequestStorage;
+        private readonly IUsersApiClient _usersApiClient;
 
         public SendStoryHandler(IStoryRepository storyRepository,
             IStoryTextPolicy storyTextPolicy, IDateTimeProvider dateTimeProvider, IIdGenerator idGenerator,
-            IStoryRequestStorage storyRequestStorage)
+            IStoryRequestStorage storyRequestStorage, IUsersApiClient usersApiClient)
         {
             _storyRepository = storyRepository;
             _storyTextPolicy = storyTextPolicy;
             _dateTimeProvider = dateTimeProvider;
             _idGenerator = idGenerator;
             _storyRequestStorage = storyRequestStorage;
+            _usersApiClient = usersApiClient;
         }
 
         public async Task HandleAsync(SendStory command)
         {
-            var author = Author.Create(command.UserId, $"user-{command.UserId:N}");
+            var user = await _usersApiClient.GetAsync(command.UserId);
+            if (user is null)
+            {
+                throw new UserNotFoundException(command.UserId);
+            }
+
+            if (user.Locked)
+            {
+                throw new UserLockedException(command.UserId);
+            }
+            
+            var author = Author.Create(user.Id, user.Name);
             var storyText = new StoryText(command.Text);
             _storyTextPolicy.Verify(storyText);
             var now = _dateTimeProvider.Get();
