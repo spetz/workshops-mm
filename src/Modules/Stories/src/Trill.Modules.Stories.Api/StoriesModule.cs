@@ -8,6 +8,7 @@ using Trill.Modules.Stories.Application.DTO;
 using Trill.Modules.Stories.Application.Queries;
 using Trill.Modules.Stories.Application.Services;
 using Trill.Modules.Stories.Infrastructure;
+using Trill.Shared.Abstractions;
 using Trill.Shared.Abstractions.Queries;
 using Trill.Shared.Bootstrapper;
 using Trill.Shared.Bootstrapper.Endpoints;
@@ -32,6 +33,14 @@ namespace Trill.Modules.Stories.Api
         {
             app.UseContracts();
             app.UseInfrastructure();
+            app.UseModuleRequests()
+                .Subscribe<SendStory, SendStory.Response>($"{Path}/send-story", async cmd =>
+                {
+                    await app.ApplicationServices.GetRequiredService<IDispatcher>().SendAsync(cmd);
+                    var storage = app.ApplicationServices.GetRequiredService<IStoryRequestStorage>();
+                    var storyId = storage.GetStoryId(cmd.Id);
+                    return new SendStory.Response(storyId);
+                });
         }
 
         public void ConfigureEndpoints(IEndpointRouteBuilder endpoints)

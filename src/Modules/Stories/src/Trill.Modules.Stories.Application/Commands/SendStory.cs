@@ -30,5 +30,15 @@ namespace Trill.Modules.Stories.Application.Commands
             VisibleTo = visibleTo;
             Highlighted = highlighted;
         }
+        
+        internal class Response
+        {
+            public long StoryId { get; }
+
+            public Response(long storyId)
+            {
+                StoryId = storyId;
+            }
+        }
     }
 }
