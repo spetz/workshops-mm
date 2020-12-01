@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Trill.Modules.Stories.Application.Commands;
 using Trill.Modules.Stories.Application.DTO;
 using Trill.Modules.Stories.Application.Queries;
+using Trill.Modules.Stories.Application.Services;
 using Trill.Modules.Stories.Infrastructure;
 using Trill.Shared.Abstractions.Queries;
 using Trill.Shared.Bootstrapper;
@@ -37,7 +39,13 @@ namespace Trill.Modules.Stories.Api
             endpoints.MapGet(Path, ctx => ctx.Response.WriteAsync($"{Name} module"));
             endpoints
                 .Get<BrowseStories, Paged<StoryDto>>($"{Path}/stories")
-                .Get<GetStory, StoryDetailsDto>($"{Path}/stories/{{storyId}}");
+                .Get<GetStory, StoryDetailsDto>($"{Path}/stories/{{storyId}}")
+                .Post<SendStory>($"{Path}/stories", after: (cmd, ctx) =>
+                {
+                    var storage = ctx.RequestServices.GetRequiredService<IStoryRequestStorage>();
+                    var storyId = storage.GetStoryId(cmd.Id);
+                    return ctx.Response.Created($"{Path}/stories/{storyId}");
+                });
         }
     }
 }
