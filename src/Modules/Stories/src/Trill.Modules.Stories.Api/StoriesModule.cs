@@ -40,6 +40,7 @@ namespace Trill.Modules.Stories.Api
             endpoints
                 .Get<BrowseStories, Paged<StoryDto>>($"{Path}/stories")
                 .Get<GetStory, StoryDetailsDto>($"{Path}/stories/{{storyId}}")
+                .Post<RateStory>($"{Path}/stories/{{storyId}}/rate")
                 .Post<SendStory>($"{Path}/stories", after: (cmd, ctx) =>
                 {
                     var storage = ctx.RequestServices.GetRequiredService<IStoryRequestStorage>();
