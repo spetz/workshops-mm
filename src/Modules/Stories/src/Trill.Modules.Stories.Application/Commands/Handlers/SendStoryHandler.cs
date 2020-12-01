@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using Trill.Modules.Stories.Application.Clients.Users;
 using Trill.Modules.Stories.Application.Exceptions;
 using Trill.Modules.Stories.Application.Services;
 using Trill.Modules.Stories.Core.Entities;
@@ -19,23 +18,23 @@ namespace Trill.Modules.Stories.Application.Commands.Handlers
         private readonly IDateTimeProvider _dateTimeProvider;
         private readonly IIdGenerator _idGenerator;
         private readonly IStoryRequestStorage _storyRequestStorage;
-        private readonly IUsersApiClient _usersApiClient;
+        private readonly IUserRepository _userRepository;
 
         public SendStoryHandler(IStoryRepository storyRepository,
             IStoryTextPolicy storyTextPolicy, IDateTimeProvider dateTimeProvider, IIdGenerator idGenerator,
-            IStoryRequestStorage storyRequestStorage, IUsersApiClient usersApiClient)
+            IStoryRequestStorage storyRequestStorage, IUserRepository userRepository)
         {
             _storyRepository = storyRepository;
             _storyTextPolicy = storyTextPolicy;
             _dateTimeProvider = dateTimeProvider;
             _idGenerator = idGenerator;
             _storyRequestStorage = storyRequestStorage;
-            _usersApiClient = usersApiClient;
+            _userRepository = userRepository;
         }
 
         public async Task HandleAsync(SendStory command)
         {
-            var user = await _usersApiClient.GetAsync(command.UserId);
+            var user = await _userRepository.GetAsync(command.UserId);
             if (user is null)
             {
                 throw new UserNotFoundException(command.UserId);
@@ -46,7 +45,7 @@ namespace Trill.Modules.Stories.Application.Commands.Handlers
                 throw new UserLockedException(command.UserId);
             }
             
-            var author = Author.Create(user.Id, user.Name);
+            var author = Author.Create(user);
             var storyText = new StoryText(command.Text);
             _storyTextPolicy.Verify(storyText);
             var now = _dateTimeProvider.Get();

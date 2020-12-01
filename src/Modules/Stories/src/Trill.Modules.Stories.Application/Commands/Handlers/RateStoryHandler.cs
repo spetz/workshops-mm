@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using Trill.Modules.Stories.Application.Clients.Users;
 using Trill.Modules.Stories.Application.Exceptions;
 using Trill.Modules.Stories.Core.Entities;
 using Trill.Modules.Stories.Core.Repositories;
@@ -11,19 +10,19 @@ namespace Trill.Modules.Stories.Application.Commands.Handlers
     {
         private readonly IStoryRepository _storyRepository;
         private readonly IStoryRatingRepository _storyRatingRepository;
-        private readonly IUsersApiClient _usersApiClient;
+        private readonly IUserRepository _userRepository;
 
         public RateStoryHandler(IStoryRepository storyRepository, IStoryRatingRepository storyRatingRepository,
-            IUsersApiClient usersApiClient)
+            IUserRepository userRepository)
         {
             _storyRepository = storyRepository;
             _storyRatingRepository = storyRatingRepository;
-            _usersApiClient = usersApiClient;
+            _userRepository = userRepository;
         }
 
         public async Task HandleAsync(RateStory command)
         {
-            var user = await _usersApiClient.GetAsync(command.UserId);
+            var user = await _userRepository.GetAsync(command.UserId);
             if (user is null)
             {
                 throw new UserNotFoundException(command.UserId);
