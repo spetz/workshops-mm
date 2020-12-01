@@ -1,8 +1,10 @@
 using System.Threading.Tasks;
+using Trill.Modules.Stories.Application.Events;
 using Trill.Modules.Stories.Application.Exceptions;
 using Trill.Modules.Stories.Core.Entities;
 using Trill.Modules.Stories.Core.Repositories;
 using Trill.Shared.Abstractions.Commands;
+using Trill.Shared.Abstractions.Messaging;
 
 namespace Trill.Modules.Stories.Application.Commands.Handlers
 {
@@ -11,13 +13,15 @@ namespace Trill.Modules.Stories.Application.Commands.Handlers
         private readonly IStoryRepository _storyRepository;
         private readonly IStoryRatingRepository _storyRatingRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IMessageBroker _messageBroker;
 
         public RateStoryHandler(IStoryRepository storyRepository, IStoryRatingRepository storyRatingRepository,
-            IUserRepository userRepository)
+            IUserRepository userRepository, IMessageBroker messageBroker)
         {
             _storyRepository = storyRepository;
             _storyRatingRepository = storyRatingRepository;
             _userRepository = userRepository;
+            _messageBroker = messageBroker;
         }
 
         public async Task HandleAsync(RateStory command)
@@ -41,6 +45,8 @@ namespace Trill.Modules.Stories.Application.Commands.Handlers
     
             await _storyRatingRepository.SetAsync(new StoryRating(new StoryRatingId(command.StoryId, command.UserId),
                 command.Rate));
+            var totalRating = await _storyRatingRepository.GetTotalRatingAsync(story.Id);
+            await _messageBroker.PublishAsync(new StoryRated(story.Id, command.UserId, command.Rate, totalRating));
         }
     }
 }
