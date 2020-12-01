@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Trill.Modules.Stories.Application.Events;
 using Trill.Modules.Stories.Application.Exceptions;
 using Trill.Modules.Stories.Application.Services;
 using Trill.Modules.Stories.Core.Entities;
@@ -8,6 +9,7 @@ using Trill.Modules.Stories.Core.ValueObjects;
 using Trill.Shared.Abstractions;
 using Trill.Shared.Abstractions.Commands;
 using Trill.Shared.Abstractions.Generators;
+using Trill.Shared.Abstractions.Messaging;
 
 namespace Trill.Modules.Stories.Application.Commands.Handlers
 {
@@ -19,10 +21,11 @@ namespace Trill.Modules.Stories.Application.Commands.Handlers
         private readonly IIdGenerator _idGenerator;
         private readonly IStoryRequestStorage _storyRequestStorage;
         private readonly IUserRepository _userRepository;
+        private readonly IMessageBroker _messageBroker;
 
         public SendStoryHandler(IStoryRepository storyRepository,
             IStoryTextPolicy storyTextPolicy, IDateTimeProvider dateTimeProvider, IIdGenerator idGenerator,
-            IStoryRequestStorage storyRequestStorage, IUserRepository userRepository)
+            IStoryRequestStorage storyRequestStorage, IUserRepository userRepository, IMessageBroker messageBroker)
         {
             _storyRepository = storyRepository;
             _storyTextPolicy = storyTextPolicy;
@@ -30,6 +33,7 @@ namespace Trill.Modules.Stories.Application.Commands.Handlers
             _idGenerator = idGenerator;
             _storyRequestStorage = storyRequestStorage;
             _userRepository = userRepository;
+            _messageBroker = messageBroker;
         }
 
         public async Task HandleAsync(SendStory command)
@@ -56,6 +60,10 @@ namespace Trill.Modules.Stories.Application.Commands.Handlers
             var story = new Story(storyId, author, command.Title, storyText, command.Tags, now, visibility);
             await _storyRepository.AddAsync(story);
             _storyRequestStorage.SetStoryId(command.Id, story.Id);
+            await _messageBroker.PublishAsync(new StorySent(story.Id,
+                new StorySent.AuthorModel(author.Id, author.Name), story.Title, story.Tags, story.CreatedAt,
+                new StorySent.VisibilityModel(story.Visibility.From, story.Visibility.To,
+                    story.Visibility.Highlighted)));
         }
     }
 }
