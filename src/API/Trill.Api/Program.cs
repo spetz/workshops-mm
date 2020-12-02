@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Trill.Shared.Infrastructure.Logging;
+using Trill.Shared.Infrastructure.Vault;
 
 namespace Trill.Api
 {
@@ -15,6 +16,7 @@ namespace Trill.Api
         public static IHostBuilder CreateHostBuilder(string[] args)
             => Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder => webBuilder.UseStartup<Startup>())
-                .UseLogging();
+                .UseLogging()
+                .UseVault();
     }
 }
