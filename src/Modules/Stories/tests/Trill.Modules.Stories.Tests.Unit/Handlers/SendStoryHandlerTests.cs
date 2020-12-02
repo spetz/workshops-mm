@@ -1,8 +1,11 @@
 using System;
 using System.Threading.Tasks;
 using NSubstitute;
+using Shouldly;
 using Trill.Modules.Stories.Application.Commands;
 using Trill.Modules.Stories.Application.Commands.Handlers;
+using Trill.Modules.Stories.Application.Events;
+using Trill.Modules.Stories.Application.Exceptions;
 using Trill.Modules.Stories.Application.Services;
 using Trill.Modules.Stories.Core.Entities;
 using Trill.Modules.Stories.Core.Policies;
@@ -35,6 +38,40 @@ namespace Trill.Modules.Stories.Tests.Unit.Handlers
             _dateTimeProvider.Received(1).Get();
             _storyRequestStorage.Received(1).SetStoryId(command.Id, Arg.Any<long>());
             await _storyRepository.Received(1).AddAsync(Arg.Is<Story>(x => x.Title == command.Title));
+        }
+        
+        [Fact]
+        public async Task story_sent_event_should_be_published()
+        {
+            var user = SetupUser();
+            var command = CreateCommand(user.Id);
+    
+            await Act(command);
+    
+            await _messageBroker.Received(1).PublishAsync(Arg.Is<StorySent>(x => x.StoryId == command.StoryId));
+        }
+        
+        [Fact]
+        public async Task handler_should_fail_given_invalid_user()
+        {
+            var command = CreateCommand(Guid.NewGuid());
+    
+            var exception = await Record.ExceptionAsync(() => Act(command));
+    
+            exception.ShouldNotBeNull();
+            exception.ShouldBeOfType<UserNotFoundException>();
+        }
+        
+        [Fact]
+        public async Task handler_should_fail_given_locked_user()
+        {
+            var user = SetupUser(true);
+            var command = CreateCommand(user.Id);
+    
+            var exception = await Record.ExceptionAsync(() => Act(command));
+    
+            exception.ShouldNotBeNull();
+            exception.ShouldBeOfType<UserLockedException>();
         }
 
         #region Arrange
