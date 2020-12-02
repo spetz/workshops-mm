@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Chronicle;
+using Trill.Modules.Saga.Commands.External;
 using Trill.Modules.Saga.Events.External;
 using Trill.Shared.Abstractions.Messaging;
 
@@ -14,7 +15,8 @@ namespace Trill.Modules.Saga.Sagas
     internal class PublishAdSaga : Saga<PublishAdSagaData>,
         ISagaStartAction<AdApproved>,
         ISagaAction<AdPaid>,
-        ISagaAction<AdPublished>
+        ISagaAction<AdPublished>,
+        ISagaAction<AdActionRejected>
     {
         private readonly IMessageBroker _messageBroker;
 
@@ -34,26 +36,42 @@ namespace Trill.Modules.Saga.Sagas
 
         public async Task HandleAsync(AdApproved message, ISagaContext context)
         {
+            await _messageBroker.PublishAsync(new PayAd(message.AdId));
         }
 
         public async Task CompensateAsync(AdApproved message, ISagaContext context)
         {
+            await Task.CompletedTask;
         }
 
         public async Task HandleAsync(AdPaid message, ISagaContext context)
         {
+            await _messageBroker.PublishAsync(new PublishAd(message.AdId));
         }
 
         public async Task CompensateAsync(AdPaid message, ISagaContext context)
         {
+            await Task.CompletedTask;
         }
 
         public async Task HandleAsync(AdPublished message, ISagaContext context)
         {
+            await CompleteAsync();
         }
 
         public async Task CompensateAsync(AdPublished message, ISagaContext context)
         {
+            await Task.CompletedTask;
+        }
+
+        public async Task HandleAsync(AdActionRejected message, ISagaContext context)
+        {
+            await RejectAsync();
+        }
+
+        public async Task CompensateAsync(AdActionRejected message, ISagaContext context)
+        {
+            await Task.CompletedTask;
         }
     }
 }
