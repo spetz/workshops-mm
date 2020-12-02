@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Shouldly;
+using Trill.Modules.Stories.Application.Commands;
 using Trill.Modules.Stories.Application.DTO;
 
 namespace Trill.Tests.EndToEnd.Common
@@ -15,9 +16,9 @@ namespace Trill.Tests.EndToEnd.Common
         public static async Task<long> SendStoryAsync(this HttpClient client, Guid userId)
         {
             var id = Guid.NewGuid();
-            // var command = new SendStory(default, userId, $"Test story {id:N}", $"Lorem ipsum {id}",
-            //     new[] {$"test-1-{id:N}", $"test-2-{id:N}"});
-            var command = new { };
+            var command = new SendStory(default, userId, $"Test story {id:N}", $"Lorem ipsum {id}",
+                new[] {$"test-1-{id:N}", $"test-2-{id:N}"});
+            // var command = new { };
             var response = await client.PostAsync($"{Module}/stories", command.GetPayload());
             response.StatusCode.ShouldBe(HttpStatusCode.Created);
             var location = response.Headers.Location;
